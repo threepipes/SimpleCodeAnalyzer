@@ -7,6 +7,7 @@
 * antlrをインストールし，ライブラリとしてプロジェクトに導入
 * [Antlr grammar list](https://github.com/antlr/grammars-v4) から文法ファイルの取得
 * /lexer/cpp等にLexerを作成し，そのソースをこのプロジェクトにリンク
+* リンクしたLexerのソースファイルにpackage文の追加
 
 ## 現在のプロジェクトの構造
 * Analyzer.java

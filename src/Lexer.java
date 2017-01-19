@@ -1,8 +1,11 @@
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +19,9 @@ public class Lexer {
 	BufferedReader in;
 	public Lexer(String filename) {
 		try {
-			in = new BufferedReader(new InputStreamReader(new FileInputStream(filename)));
+			in =new BufferedReader(
+					new InputStreamReader(
+							new FileInputStream(filename)));
 		} catch (FileNotFoundException e) {
 			System.err.println("No such file: "+ filename);
 		}
@@ -28,13 +33,19 @@ public class Lexer {
 			for(String line=in.readLine(); line!=null; line=in.readLine()){
 				sb.append(line).append('\n');
 			}
-		}catch(IOException e){
+			in.close();
+			List<String> tokens = lexer(sb.toString());
+			PrintWriter out = new PrintWriter(
+					new BufferedWriter(
+							new FileWriter(outfile)));
+			for(String t: tokens){
+				out.println(t);
+			}
+			out.close();
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		List<String> tokens = lexer(sb.toString());
-		for(String t: tokens){
-			System.out.println(t);
-		}
+		
 	}
 	
 	private List<String> lexer(String seq){
