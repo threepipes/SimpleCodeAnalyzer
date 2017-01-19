@@ -13,8 +13,8 @@ public class Analyzer {
 		// --- for debug ---
 		if(debug){
 			String[] newarg = {
-					"-s",
-					"data/filelist.txt"
+//					"-l",
+					"data/example.cpp"
 			};
 			args = newarg;
 		}
@@ -29,17 +29,34 @@ public class Analyzer {
 		boolean fileList = false;
 		String lang = "cpp";
 		String filename = args[args.length-1];
-		for(int i=0; i<args.length-1; i++){
+		String keywordFile = "keyword";
+		boolean test = false;
+		boolean json = false;
+		int i;
+		for(i=0; i<args.length; i++){
 			switch(args[i]){
+			case "-test":
+				test = true;
+				break;
 			case "-l":
 				lexOnly = true;
 				break;
 			case "-s":
 				fileList = true;
 				break;
+			case "-k":
+				i++;
+				if(i>=args.length-1){
+					System.err.println("Error: Wrong arg size. -k option must have filename.");
+					return;
+				}
+				keywordFile = args[i];
+				break;
+			case "-j":
+				json = true;
+				break;
 			default:
-				usage();
-				return;
+				break;
 			}
 		}
 		List<FileData> files;
@@ -50,17 +67,26 @@ public class Analyzer {
 			files.add(new FileData(filename, lang));
 		}
 		TokenAnalyzer ta = null;
-		List<String> keywords = loadKeywords("keyword");
+		List<String> keywords = loadKeywords(keywordFile);
 		if(!lexOnly){
 			ta = new TokenAnalyzer(keywords);
 		}
 		for(FileData file: files){
+			if(test){
+				test(file.filename);
+				continue;
+			}
 			List<String> tokens = lexerWithResult(file);
 			if(!lexOnly){
 				List<Integer> count = ta.countTokens(tokens);
 				outputCountResult(keywords, count);
 			}
 		}
+	}
+	
+	static void test(String file){
+		Lexer lex = new Lexer(file);
+		lex.test();
 	}
 	
 	static void outputCountResult(List<String> keywords, List<Integer> count){
@@ -93,9 +119,7 @@ public class Analyzer {
 
 	static List<String> lexerWithResult(FileData file){
 		String filename = file.getFilename();
-		File fo = new File(filename);
 		Lexer lex = new Lexer(filename);
-//		lex.outputResult("data/"+fo.getName()+"_out.txt");
 		return lex.getTokenList();
 	}
 	
@@ -154,7 +178,8 @@ public class Analyzer {
 		String out =
 				"Analyzer [-option] <filename>" +
 				"  -l: only use lexer(default)" +
-				"  -s: input file list";
+				"  -s: input file list" +
+				"  -k <keyword_filename>: input keyword file";
 		System.out.println(out);
 	}
 }
