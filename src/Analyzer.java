@@ -25,7 +25,7 @@ public class Analyzer {
 			return;
 		}
 		mkdir();
-		boolean lexOnly = true;
+		boolean lexOnly = false;
 		boolean fileList = false;
 		String lang = "cpp";
 		String filename = args[args.length-1];
@@ -49,9 +49,31 @@ public class Analyzer {
 			files = new ArrayList<>();
 			files.add(new FileData(filename, lang));
 		}
-		for(FileData file: files){
-			lexer(file);
+		TokenAnalyzer ta = null;
+		List<String> keywords = loadKeywords("keyword");
+		if(!lexOnly){
+			ta = new TokenAnalyzer(keywords);
 		}
+		for(FileData file: files){
+			List<String> tokens = lexerWithResult(file);
+			if(!lexOnly){
+				List<Integer> count = ta.countTokens(tokens);
+				outputCountResult(keywords, count);
+			}
+		}
+	}
+	
+	static void outputCountResult(List<String> keywords, List<Integer> count){
+		if(keywords.size() != count.size()){
+			System.err.println("Error: keywords size or counter size are wrong.");
+			return;
+		}
+		final int size = keywords.size();
+		System.out.println("output results...");
+		for(int i=0; i<size; i++){
+			System.out.printf("%s\t: %d\n", keywords.get(i), count.get(i));
+		}
+		System.out.println("finish.\n");
 	}
 	
 	static void mkdir(){
@@ -67,6 +89,14 @@ public class Analyzer {
 		File fo = new File(filename);
 		Lexer lex = new Lexer(filename);
 		lex.outputResult("data/"+fo.getName()+"_out.txt");
+	}
+
+	static List<String> lexerWithResult(FileData file){
+		String filename = file.getFilename();
+		File fo = new File(filename);
+		Lexer lex = new Lexer(filename);
+//		lex.outputResult("data/"+fo.getName()+"_out.txt");
+		return lex.getTokenList();
 	}
 	
 	static List<FileData> loadFilenames(String filelist){
@@ -93,6 +123,27 @@ public class Analyzer {
 			in.close();
 		} catch (FileNotFoundException e) {
 			System.err.println("Error file not found: "+filelist);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return list;
+	}
+	
+	static List<String> loadKeywords(String filename){
+		List<String> list = new ArrayList<>();
+		try {
+			BufferedReader in =
+					new BufferedReader(
+					new InputStreamReader(
+					new FileInputStream(filename)
+					));
+			for(String line=in.readLine();
+					line!=null; line=in.readLine()){
+				list.add(line);
+			}
+			in.close();
+		} catch (FileNotFoundException e) {
+			System.err.println("Error file not found: "+filename);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
