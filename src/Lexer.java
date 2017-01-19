@@ -27,9 +27,23 @@ public class Lexer {
 		}
 	}
 	
-	public void outputResult(String outfile){
-		StringBuilder sb = new StringBuilder();
+	public List<String> getTokenList(){
 		try{
+			StringBuilder sb = new StringBuilder();
+			for(String line=in.readLine(); line!=null; line=in.readLine()){
+				sb.append(line).append('\n');
+			}
+			in.close();
+			return lexer(sb.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public void outputResult(String outfile){
+		try{
+			StringBuilder sb = new StringBuilder();
 			for(String line=in.readLine(); line!=null; line=in.readLine()){
 				sb.append(line).append('\n');
 			}
