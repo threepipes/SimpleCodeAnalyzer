@@ -1,5 +1,3 @@
-import java.io.Closeable;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.HashMap;
@@ -11,39 +9,39 @@ import java.util.Map.Entry;
  */
 public interface Printer {
 	public void print(List list);
-	public void print(HashMap<String, Integer> map);
+	public void print(String name, HashMap<String, Integer> map);
 	public void close();
 }
 
 class JsonPrinter extends PrintWriter implements Printer {
-	boolean first = true;
+//	boolean first = true;
 	public JsonPrinter(PrintStream stream) {
 		super(stream);
-		println("[");
+//		print("[");
 	}
 	@Override
 	public void print(List list) {
-		if(first) first = false;
-		else print(",");
+//		if(first) first = false;
+//		else print(",");
 		println(list);
 	}
 	
 	@Override
-	public void print(HashMap<String, Integer> map) {
+	public void print(String name, HashMap<String, Integer> map) {
 		StringBuilder sb = new StringBuilder();
-		sb.append("{");
+		sb.append(String.format("{\"src_name\": \"%s\"", name));
 		for(Entry<String, Integer> e: map.entrySet()){
-			if(sb.length()>1) sb.append(",");
-			sb.append(String.format("\"%s\": %d", e.getKey(), e.getValue()));
+			sb.append(String.format(", \"%s\": %d", e.getKey(), e.getValue()));
 		}
 		sb.append("}");
-		if(first) first = false;
-		else print(",");
+//		if(first) first = false;
+//		else print(",");
 		println(sb.toString());
+//		flush();
 	}
 	@Override
 	public void close() {
-		println("]");
+//		println("]");
 		super.close();
 	}
 }
@@ -57,8 +55,8 @@ class StdPrinter extends PrintWriter implements Printer{
 		println(list);
 	}
 	@Override
-	public void print(HashMap<String, Integer> map) {
-		println("output results...");
+	public void print(String name, HashMap<String, Integer> map) {
+		println("output results of file: "+name+" ...");
 		for(Entry<String, Integer> e: map.entrySet()){
 			println(e.getKey()+"\t: "+e.getValue());
 		}

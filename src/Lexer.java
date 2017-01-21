@@ -1,5 +1,6 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -9,15 +10,12 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.antlr.runtime.tree.CommonTree;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.misc.Interval;
 
 import cpp.CPP14BaseListener;
 import cpp.CPP14Lexer;
-import cpp.CPP14Listener;
 import cpp.CPP14Parser;
 import cpp.CPP14Parser.ConversiondeclaratorContext;
 import cpp.CPP14Parser.ConversionfunctionidContext;
@@ -28,13 +26,13 @@ import cpp.CPP14Parser.PostfixexpressionContext;
 
 public class Lexer {
 	BufferedReader in;
-	public Lexer(String filename) {
+	public Lexer(File file) {
 		try {
 			in =new BufferedReader(
 					new InputStreamReader(
-							new FileInputStream(filename)));
+							new FileInputStream(file)));
 		} catch (FileNotFoundException e) {
-			System.err.println("No such file: "+ filename);
+			System.err.println("No such file: "+ file);
 		}
 	}
 	

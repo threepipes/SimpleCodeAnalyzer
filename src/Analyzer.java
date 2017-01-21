@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class Analyzer {
-	static boolean debug = true;
+	static boolean debug = false;
 	static boolean lexOnly = false;
 	static boolean fileList = false;
 	static boolean test = false;
@@ -36,7 +36,7 @@ public class Analyzer {
 			usage();
 			return;
 		}
-		mkdir();
+//		mkdir();
 		int i;
 		out:for(i=0; i<args.length; i++){
 			switch(args[i]){
@@ -86,13 +86,13 @@ public class Analyzer {
 		}
 		for(FileData file: files){
 			if(test){
-				test(file.filename);
+				test(file.getFile());
 				continue;
 			}
 			List<String> tokens = lexerWithResult(file);
 			if(!lexOnly){
 				HashMap<String, Integer> count = ta.countTokens(tokens);
-				printer.print(count);
+				printer.print(file.getFilename(), count);
 			}
 		}
 	}
@@ -103,12 +103,16 @@ public class Analyzer {
 			files = loadFilenames(filename);
 		}else{
 			files = new ArrayList<>();
-			files.add(new FileData(filename, lang));
+			try{
+				files.add(new FileData(filename, lang));
+			}catch(FileNotFoundException e){
+				System.err.println("Failed to find file: "+filename);
+			}
 		}
 		return files;
 	}
 	
-	static void test(String file){
+	static void test(File file){
 		Lexer lex = new Lexer(file);
 		lex.test();
 	}
@@ -123,14 +127,13 @@ public class Analyzer {
 	
 	static void lexer(FileData file){
 		String filename = file.getFilename();
-		File fo = new File(filename);
-		Lexer lex = new Lexer(filename);
-		lex.outputResult("data/"+fo.getName()+"_out.txt");
+		Lexer lex = new Lexer(file.getFile());
+		lex.outputResult("data/"+filename+"_out.txt");
 	}
 
 	static List<String> lexerWithResult(FileData file){
-		String filename = file.getFilename();
-		Lexer lex = new Lexer(filename);
+//		String filename = file.getFilename();
+		Lexer lex = new Lexer(file.getFile());
 		return lex.getTokenList();
 	}
 	
@@ -146,6 +149,7 @@ public class Analyzer {
 					new InputStreamReader(
 					new FileInputStream(filelist)
 					));
+			
 			for(String line=in.readLine();
 					line!=null; line=in.readLine()){
 				String[] data = line.split(" ");
@@ -153,11 +157,14 @@ public class Analyzer {
 					System.err.println("Error: wrong file line: "+line);
 					continue;
 				}
-				list.add(new FileData(data[0], data[1]));
+				try{
+					list.add(new FileData(data[0], data[1]));
+				}catch(FileNotFoundException e){
+					System.err.println("Failed to find file: "+data[0]);
+					continue;
+				}
 			}
 			in.close();
-		} catch (FileNotFoundException e) {
-			System.err.println("Error file not found: "+filelist);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -190,19 +197,27 @@ public class Analyzer {
 				"Analyzer [-option] <filename>" +
 				"  -l: only use lexer(default)" +
 				"  -s: input file list" +
-				"  -k <keyword_filename>: input keyword file";
+				"  -k <keyword_filename>: input keyword file" +
+				"  -j: output with json-like format";
 		System.err.println(out);
 	}
 }
 
 class FileData{
-	String filename, lang;
-	FileData(String filename, String lang){
-		this.filename = filename;
+	String lang;
+	File file;
+	FileData(String filename, String lang) throws FileNotFoundException{
+		file = new File(filename);
+		if(!file.exists()){
+			throw new FileNotFoundException();
+		}
 		this.lang = lang;
 	}
+	File getFile(){
+		return file;
+	}
 	String getFilename(){
-		return filename.toString();
+		return file.getName();
 	}
 	String getLang(){
 		return lang.toString();
