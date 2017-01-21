@@ -17,18 +17,14 @@ public class TokenAnalyzer {
 		}
 	}
 	
-	List<Integer> countTokens(List<String> tokens){
+	HashMap<String, Integer> countTokens(List<String> tokens){
 		MultiSet<String> counter = new MultiSet<>();
 		for(String t: tokens){
 			if(keyword.contains(t)){
 				counter.add(t);
 			}
 		}
-		List<Integer> result = new ArrayList<>();
-		for(String key: keywordList){
-			result.add(counter.get(key));
-		}
-		return result;
+		return counter;
 	}
 }
 

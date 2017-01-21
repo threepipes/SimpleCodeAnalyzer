@@ -12,16 +12,20 @@ import java.util.Map.Entry;
 public interface Printer {
 	public void print(List list);
 	public void print(HashMap<String, Integer> map);
+	public void close();
 }
 
-class JsonPrinter implements Printer, Closeable{
-	PrintWriter out;
+class JsonPrinter extends PrintWriter implements Printer {
+	boolean first = true;
 	public JsonPrinter(PrintStream stream) {
-		out = new PrintWriter(stream);
+		super(stream);
+		println("[");
 	}
 	@Override
 	public void print(List list) {
-		out.println(list);
+		if(first) first = false;
+		else print(",");
+		println(list);
 	}
 	
 	@Override
@@ -33,31 +37,30 @@ class JsonPrinter implements Printer, Closeable{
 			sb.append(String.format("\"%s\": %d", e.getKey(), e.getValue()));
 		}
 		sb.append("}");
-		out.println(sb.toString());
+		if(first) first = false;
+		else print(",");
+		println(sb.toString());
 	}
 	@Override
-	public void close() throws IOException {
-		out.close();
+	public void close() {
+		println("]");
+		super.close();
 	}
 }
 
-class StdPrinter implements Printer, Closeable{
-	PrintWriter out;
+class StdPrinter extends PrintWriter implements Printer{
 	public StdPrinter(PrintStream stream) {
-		out = new PrintWriter(stream);
+		super(stream);
 	}
 	@Override
 	public void print(List list) {
-		out.println(list);
+		println(list);
 	}
 	@Override
 	public void print(HashMap<String, Integer> map) {
+		println("output results...");
 		for(Entry<String, Integer> e: map.entrySet()){
-			out.println(e.getKey()+"\t: "+e.getValue());
+			println(e.getKey()+"\t: "+e.getValue());
 		}
-	}
-	@Override
-	public void close() throws IOException {
-		out.close();
 	}
 }

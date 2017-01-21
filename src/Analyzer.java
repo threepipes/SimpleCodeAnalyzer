@@ -5,16 +5,28 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class Analyzer {
 	static boolean debug = true;
+	static boolean lexOnly = false;
+	static boolean fileList = false;
+	static boolean test = false;
+	static boolean json = false;
+
+	static String lang = "cpp";
+	static String keywordFile = "keyword";
+	
+	static Printer printer;
+	
 	public static void main(String[] args) {
 		// --- for debug ---
 		if(debug){
 			String[] newarg = {
-//					"-l",
-					"data/example.cpp"
+					"-j",
+					"-s",
+					"data/filelist.txt"
 			};
 			args = newarg;
 		}
@@ -25,15 +37,8 @@ public class Analyzer {
 			return;
 		}
 		mkdir();
-		boolean lexOnly = false;
-		boolean fileList = false;
-		String lang = "cpp";
-		String filename = args[args.length-1];
-		String keywordFile = "keyword";
-		boolean test = false;
-		boolean json = false;
 		int i;
-		for(i=0; i<args.length; i++){
+		out:for(i=0; i<args.length; i++){
 			switch(args[i]){
 			case "-test":
 				test = true;
@@ -56,19 +61,27 @@ public class Analyzer {
 				json = true;
 				break;
 			default:
-				break;
+				break out;
 			}
 		}
-		List<FileData> files;
-		if(fileList){
-			files = loadFilenames(filename);
-		}else{
-			files = new ArrayList<>();
-			files.add(new FileData(filename, lang));
+		if(i!=args.length-1){
+			System.err.println("Error: Wrong arg size.");
+			return;
 		}
+		if(json){
+			printer = new JsonPrinter(System.out);
+		}else{
+			printer = new StdPrinter(System.out);
+		}
+		List<FileData> files = makeFileList(args[i]);
+		doAnalyze(files);
+		printer.close();
+	}
+	
+	static void doAnalyze(List<FileData> files){
 		TokenAnalyzer ta = null;
-		List<String> keywords = loadKeywords(keywordFile);
 		if(!lexOnly){
+			List<String> keywords = loadKeywords(keywordFile);
 			ta = new TokenAnalyzer(keywords);
 		}
 		for(FileData file: files){
@@ -78,28 +91,26 @@ public class Analyzer {
 			}
 			List<String> tokens = lexerWithResult(file);
 			if(!lexOnly){
-				List<Integer> count = ta.countTokens(tokens);
-				outputCountResult(keywords, count);
+				HashMap<String, Integer> count = ta.countTokens(tokens);
+				printer.print(count);
 			}
 		}
+	}
+	
+	static List<FileData> makeFileList(String filename){
+		List<FileData> files;
+		if(fileList){
+			files = loadFilenames(filename);
+		}else{
+			files = new ArrayList<>();
+			files.add(new FileData(filename, lang));
+		}
+		return files;
 	}
 	
 	static void test(String file){
 		Lexer lex = new Lexer(file);
 		lex.test();
-	}
-	
-	static void outputCountResult(List<String> keywords, List<Integer> count){
-		if(keywords.size() != count.size()){
-			System.err.println("Error: keywords size or counter size are wrong.");
-			return;
-		}
-		final int size = keywords.size();
-		System.out.println("output results...");
-		for(int i=0; i<size; i++){
-			System.out.printf("%s\t: %d\n", keywords.get(i), count.get(i));
-		}
-		System.out.println("finish.\n");
 	}
 	
 	static void mkdir(){
@@ -180,7 +191,7 @@ public class Analyzer {
 				"  -l: only use lexer(default)" +
 				"  -s: input file list" +
 				"  -k <keyword_filename>: input keyword file";
-		System.out.println(out);
+		System.err.println(out);
 	}
 }
 
