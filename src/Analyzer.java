@@ -14,6 +14,7 @@ public class Analyzer {
 	static boolean fileList = false;
 	static boolean test = false;
 	static boolean json = false;
+	static boolean noerror = false;
 
 	static String lang = "cpp";
 	static String keywordFile = "keyword";
@@ -52,7 +53,7 @@ public class Analyzer {
 			case "-k":
 				i++;
 				if(i>=args.length-1){
-					System.err.println("Error: Wrong arg size. -k option must have filename.");
+					log("Error: Wrong arg size. -k option must have filename.");
 					return;
 				}
 				keywordFile = args[i];
@@ -60,12 +61,15 @@ public class Analyzer {
 			case "-j":
 				json = true;
 				break;
+			case "-e":
+				noerror = true;
+				break;
 			default:
 				break out;
 			}
 		}
 		if(i!=args.length-1){
-			System.err.println("Error: Wrong arg size.");
+			log("Error: Wrong arg size.");
 			return;
 		}
 		if(json){
@@ -106,7 +110,7 @@ public class Analyzer {
 			try{
 				files.add(new FileData(filename, lang));
 			}catch(FileNotFoundException e){
-				System.err.println("Failed to find file: "+filename);
+				log("Failed to find file: "+filename);
 			}
 		}
 		return files;
@@ -154,13 +158,13 @@ public class Analyzer {
 					line!=null; line=in.readLine()){
 				String[] data = line.split(" ");
 				if(data.length!=2){
-					System.err.println("Error: wrong file line: "+line);
+					log("Error: wrong file line: "+line);
 					continue;
 				}
 				try{
 					list.add(new FileData(data[0], data[1]));
 				}catch(FileNotFoundException e){
-					System.err.println("Failed to find file: "+data[0]);
+					log("Failed to find file: "+data[0]);
 					continue;
 				}
 			}
@@ -185,7 +189,7 @@ public class Analyzer {
 			}
 			in.close();
 		} catch (FileNotFoundException e) {
-			System.err.println("Error file not found: "+filename);
+			log("Error file not found: "+filename);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -200,6 +204,11 @@ public class Analyzer {
 				"  -k <keyword_filename>: input keyword file" +
 				"  -j: output with json-like format";
 		System.err.println(out);
+	}
+	
+	static void log(String str){
+		if(noerror) return;
+		System.err.println(str);
 	}
 }
 
