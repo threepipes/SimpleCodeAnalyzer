@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -15,6 +16,8 @@ public class Analyzer {
 	static boolean test = false;
 	static boolean json = false;
 	static boolean noerror = false;
+	static boolean compareFiles = false;
+	static int ngram = 0;
 
 	static String lang = "cpp";
 	static String keywordFile = "keyword";
@@ -26,8 +29,8 @@ public class Analyzer {
 		if(debug){
 			String[] newarg = {
 					"-j",
-					"-s",
-					"data/filelist.txt"
+					"-l",
+					"C:/Work/Python/Lab/CodeForcesCrawler/data/src/.ahuja_22153882_253.src"
 			};
 			args = newarg;
 		}
@@ -47,6 +50,9 @@ public class Analyzer {
 			case "-l":
 				lexOnly = true;
 				break;
+			case "-comp":
+				compareFiles = true;
+				break;
 			case "-s":
 				fileList = true;
 				break;
@@ -64,6 +70,14 @@ public class Analyzer {
 			case "-e":
 				noerror = true;
 				break;
+			case "--ngram":
+				i++;
+				if(i>=args.length-1){
+					log("Error: Wrong arg size. -k option must have filename.");
+					return;
+				}
+				ngram = Integer.parseInt(args[i]);
+				break;
 			default:
 				break out;
 			}
@@ -77,8 +91,15 @@ public class Analyzer {
 		}else{
 			printer = new StdPrinter(System.out);
 		}
-		List<FileData> files = makeFileList(args[i]);
-		doAnalyze(files);
+		if(ngram > 0){
+			ngramDistance(args[i], ngram);
+		}else if(compareFiles){
+			List<List<FileData>> filelists = makeFileLists(args[i]);
+			printDistances(filelists);
+		}else{
+			List<FileData> files = makeFileList(args[i]);
+			doAnalyze(files);
+		}
 		printer.close();
 	}
 	
@@ -94,11 +115,94 @@ public class Analyzer {
 				continue;
 			}
 			List<String> tokens = lexerWithResult(file);
+			if(debug) System.out.println(tokens);
 			if(!lexOnly){
 				HashMap<String, Integer> count = ta.countTokens(tokens);
 				printer.print(file.getFilename(), count);
 			}
 		}
+	}
+	
+	static final String whitelist = "whitelist.txt";
+	static void ngramDistance(String listname, int n){
+		List<String> filelist = new ArrayList<>();
+		try(BufferedReader in = new BufferedReader(new FileReader(new File(listname)))){
+			for(String line = in.readLine(); line != null; line = in.readLine()){
+				filelist.add(line);
+			}
+			NGram ngram = new NGram(whitelist);
+			double[][] dist = ngram.getDistanceTable(filelist, n);
+			for(double[] row : dist){
+				printer.print(row);
+			}
+		}catch(FileNotFoundException e){
+			System.err.println("File not found: " + listname);
+		}catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	static void printDistances(List<List<FileData>> filelists){
+		List<List<Integer>> result = calcDistances(filelists);
+		if(!test) for(List<Integer> list: result) printer.print(list);
+	}
+	
+	static List<List<Integer>> calcDistances(List<List<FileData>> filelists){
+		List<List<Integer>> result = new ArrayList<>();
+		for(List<FileData> list: filelists){
+			List<Integer> diffs = new ArrayList<>();
+			if(list.size()<2){
+				result.add(diffs);
+				continue;
+			}
+			String[] preToken = null;
+			for(FileData file: list){
+				if(preToken == null){
+					preToken = toArray(lexerWithResult(file));
+					continue;
+				}
+				String[] tokens = toArray(lexerWithResult(file));
+				LevenshteinDistance<String> dist = new LevenshteinDistance<>(preToken, tokens, 1, 1, 2);
+				diffs.add(dist.getDist());
+			}
+			result.add(diffs);
+		}
+		return result;
+	}
+	
+	static String[] toArray(List<String> list){
+		return list.toArray(new String[list.size()]);
+	}
+	
+	// C++であることを仮定(後程変更が必要)
+	static List<List<FileData>> makeFileLists(String filename){
+		List<List<FileData>> filelists = new ArrayList<>();
+		try {
+			BufferedReader in =
+					new BufferedReader(
+					new InputStreamReader(
+					new FileInputStream(filename)
+					));
+			
+			for(String line=in.readLine();
+					line!=null; line=in.readLine()){
+				String[] data = line.split(" ");
+				List<FileData> list = new ArrayList<>();
+				try{
+					for(String file: data){
+						list.add(new FileData(file, "C++"));
+					}
+				}catch(FileNotFoundException e){
+					log("Failed to find file: "+data[0]);
+					continue;
+				}
+				filelists.add(list);
+			}
+			in.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return filelists;
 	}
 	
 	static List<FileData> makeFileList(String filename){
@@ -137,8 +241,11 @@ public class Analyzer {
 
 	static List<String> lexerWithResult(FileData file){
 //		String filename = file.getFilename();
+		if(test) System.err.println(file.getFilename());
 		Lexer lex = new Lexer(file.getFile());
-		return lex.getTokenList();
+		List<String> result = lex.getTokenList();
+		if(result.isEmpty()) System.err.println("Token list is empty!");
+		return result;
 	}
 	
 	static List<FileData> loadFilenames(String filelist){

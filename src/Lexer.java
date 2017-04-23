@@ -43,7 +43,7 @@ public class Lexer {
 				sb.append(line).append('\n');
 			}
 			in.close();
-			return lexer(sb.toString());
+			return lexer(sb.toString().replace("\\\n", ""));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

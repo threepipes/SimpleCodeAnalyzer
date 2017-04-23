@@ -1,5 +1,6 @@
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -9,6 +10,7 @@ import java.util.Map.Entry;
  */
 public interface Printer {
 	public void print(List list);
+	public void print(double[] list);
 	public void print(String name, HashMap<String, Integer> map);
 	public void close();
 }
@@ -24,6 +26,10 @@ class JsonPrinter extends PrintWriter implements Printer {
 //		if(first) first = false;
 //		else print(",");
 		println(list);
+	}
+	
+	public void print(double[] list){
+		println(Arrays.toString(list));
 	}
 	
 	@Override
@@ -53,6 +59,9 @@ class StdPrinter extends PrintWriter implements Printer{
 	@Override
 	public void print(List list) {
 		println(list);
+	}
+	public void print(double[] list){
+		println(Arrays.toString(list));
 	}
 	@Override
 	public void print(String name, HashMap<String, Integer> map) {
